@@ -1,6 +1,9 @@
 package com.evollu.react.fcm;
 
 import java.util.Map;
+
+import android.app.Application;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,16 +23,25 @@ public class MessagingService extends FirebaseMessagingService {
 
     private static final String TAG = "MessagingService";
 
+    private Context mContext;
+
+    public MessagingService(Context context) {
+        this.mContext = context;
+    }
+
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         Log.d(TAG, "Remote message received");
+        if (this.mContext == null) {
+            this.mContext = this;
+        }
         Intent i = new Intent("com.evollu.react.fcm.ReceiveNotification");
         i.putExtra("data", remoteMessage);
         handleBadge(remoteMessage);
         buildLocalNotification(remoteMessage);
 
         final Intent message = i;
-        
+
         // We need to run this on the main thread, as the React code assumes that is true.
         // Namely, DevServerHelper constructs a Handler() without a Looper, which triggers:
         // "Can't create handler inside thread that has not called Looper.prepare()"
@@ -37,7 +49,7 @@ public class MessagingService extends FirebaseMessagingService {
         handler.post(new Runnable() {
             public void run() {
                 // Construct and load our normal React JS code bundle
-                ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
+                ReactInstanceManager mReactInstanceManager = ((ReactApplication) mContext.getApplicationContext()).getReactNativeHost().getReactInstanceManager();
                 ReactContext context = mReactInstanceManager.getCurrentReactContext();
                 // If it's constructed, send a notification
                 if (context != null) {
@@ -59,7 +71,7 @@ public class MessagingService extends FirebaseMessagingService {
     }
 
     public void handleBadge(RemoteMessage remoteMessage) {
-        BadgeHelper badgeHelper = new BadgeHelper(this);
+        BadgeHelper badgeHelper = new BadgeHelper(mContext);
         if (remoteMessage.getData() == null) {
             return;
         }
@@ -86,7 +98,7 @@ public class MessagingService extends FirebaseMessagingService {
         if(customNotification != null){
             try {
                 Bundle bundle = BundleJSONConverter.convertToBundle(new JSONObject(customNotification));
-                FIRLocalMessagingHelper helper = new FIRLocalMessagingHelper(this.getApplication());
+                FIRLocalMessagingHelper helper = new FIRLocalMessagingHelper((Application) mContext.getApplicationContext());
                 helper.sendNotification(bundle);
             } catch (JSONException e) {
                 e.printStackTrace();
