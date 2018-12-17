@@ -57,7 +57,7 @@ public class MessagingService extends FirebaseMessagingService {
                     }
                 }
               } catch (e) {
-                // continue
+                // this catch will prevent a crash, but the notification will not be shown
               }
             }
         });
