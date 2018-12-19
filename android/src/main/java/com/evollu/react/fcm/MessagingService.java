@@ -68,7 +68,7 @@ public class MessagingService extends FirebaseMessagingService {
                         mReactInstanceManager.createReactContextInBackground();
                     }
                 }
-              } catch (e) {
+              } catch (Exception e) {
                 // this catch will prevent a crash, but the notification will not be shown
               }
             }
